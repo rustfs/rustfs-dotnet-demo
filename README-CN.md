@@ -2,6 +2,10 @@
 
 # RustFS .NET S3 演示项目
 
+<p align="center"> <a href="https://github.com/rustfs/rustfs-dotnet-demo/"> English </a> |  中文 </p>
+
+
+
 这是一个使用 RustFS 技术实现的 .NET S3 演示项目，展示了如何在 .NET 环境中与 S3 兼容的存储服务进行交互。
 
 ## 功能概述
@@ -70,3 +74,9 @@ AWS S3 的连接信息通过 AwsS3Setting 类进行配置，包含服务地址�
 ## 许可证
 
 本项目遵循 Apache-2.0 许可证。
+
+
+## 特别鸣谢
+
+👉 特别感谢 <a href="https://github.com/zfchai">@zfchai</a> 提交的关于.Net的第一版演示代码。 
+
