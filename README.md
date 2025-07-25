@@ -3,9 +3,6 @@
 # RustFS .NET S3 Demo Project
 
 <p align="center"> English |  <a href="https://github.com/rustfs/rustfs-dotnet-demo/blob/main/README-CN.md">中文</a> </p>
-
-
-
 This is a .NET S3 demo project implemented using RustFS technology, demonstrating how to interact with S3-compatible storage services in a .NET environment.
 
 ## Feature Overview
@@ -13,7 +10,7 @@ This is a .NET S3 demo project implemented using RustFS technology, demonstratin
 This project mainly implements the following functions:
 - Bucket Management: Create, delete, check existence, and list all buckets
 - File Management: Upload, download, delete, and list files within a bucket
-- Unified API response format
+- Unified API response format `ApiResponse`
 - Exception handling middleware
 
 ## Key Features
@@ -31,25 +28,79 @@ All APIs follow a unified response format containing the following fields:
 - Message: Description of the operation result
 - Data: Returned data (if any)
 
-## Usage Examples
 
-### Create a Bucket
+## Environmental Description
+
+- Install `NET9 SDK 9.0.7·` and the latest version, command to view environment information:
+
+```bash
+dotnet --info
+```
+
+- Install the `Docker` environment locally and start the `RustFS` container service:
+
+```bash
+# Pull image
+docker pull rustfs/rustfs:latest
+# Start container
+docker run -d \
+  --name rustfs \
+  -p 9000:9000 \
+  -v /data:/data \
+  rustfs/rustfs:latest
+```
+
+For more information, please refer to:
+
+- `https://rustfs.com/`
+- `https://dotnet.microsoft.com/zh-cn/download`
+
+## Example usage
+
+### Start project
+
+- Use the ` cmd/powershell/pwsh ` terminal to run the following command:
+
+```pwsh
+# Clone project
+git clone  https://gitee.com/dolayout/rustfs_dotnet.git
+# Enter the root directory of the project
+cd rustfs_dotnet
+# Restore Nuget package
+dotnet restore
+# Run the project
+dotnet run -c Release -p ./src/rustfs_dotnet_s3_demo
+```
+
+- Browser input address:
+
+```bash
+http://localhost:5073/scalar/v1
+```
+
+### Interface operation
+
+- Create a Bucket
+
 ```http
 POST /api/bucket/{bucketName}
 ```
 
-### Upload a File
+- Upload a File
+
 ```http
 POST /api/file/upload/{bucketName}/{key}
 Form-data: file=@local_file_path
 ```
 
-### Download a File
+- Download a File
+
 ```http
 GET /api/file/download/{bucketName}/{key}
 ```
 
-### Delete a File
+- Delete a File
+
 ```http
 DELETE /api/file/{bucketName}/{key}
 ```
