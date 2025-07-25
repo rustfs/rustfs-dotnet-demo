@@ -2,7 +2,8 @@
 
 # RustFS .NET S3 Demo Project
 
-English |  <a href="https://github.com/rustfs/rustfs-dotnet-demo/blob/main/README-CN.md">中文</a>
+<p align="center"> English |  <a href="https://github.com/rustfs/rustfs-dotnet-demo/blob/main/README-CN.md">中文</a> </p>
+
 
 
 This is a .NET S3 demo project implemented using RustFS technology, demonstrating how to interact with S3-compatible storage services in a .NET environment.
@@ -72,4 +73,9 @@ AWS S3 connection information is configured through the AwsS3Setting class, whic
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is licensed under the MIT License.
+
+## Gratitude
+
+👉 Special thanks to <a href="https://github.com/zfchai">@zfchai</a> submit the initialization code.  
+
