@@ -1,5 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/rustfs_dotnet_s3_demo/rustfs.dotnet.s3.demo.csproj" />
-  </Folder>
-</Solution>

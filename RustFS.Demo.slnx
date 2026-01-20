@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/RustFS.Demo.AppHost/RustFS.Demo.AppHost.csproj" />
+    <Project Path="src/RustFS.Demo.ServiceDefaults/RustFS.Demo.ServiceDefaults.csproj" />
+    <Project Path="src/RustFS.Demo.Web/RustFS.Demo.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RustFS.Demo.Tests/RustFS.Demo.Tests.csproj" />
+  </Folder>
+</Solution>
+

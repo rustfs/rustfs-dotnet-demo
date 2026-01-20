@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustFS Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .bucket-item { cursor: pointer; }
+        .bucket-item:hover { background-color: #f8f9fa; }
+        .active-bucket { background-color: #e9ecef; border-color: #dee2e6; }
+        .lang-switch { position: absolute; top: 20px; right: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container position-relative">
+        <div class="lang-switch dropdown d-flex align-items-center">
+            <span class="me-2 text-muted">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-globe" viewBox="0 0 16 16">
+                    <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.592.28 1.107.425 1.507.406.966.91 1.444 1.43 1.57V12H5.145zm8.6-3.5h-2.49c.03.877.138 1.718.312 2.5h2.176a6.96 6.96 0 0 0 .656-2.5zm-8.36 3.5a9.27 9.27 0 0 1-.64-1.539 6.7 6.7 0 0 1-.597-.933A7.02 7.02 0 0 0 2.255 12H4.09zm1.43 1.507c.42.115.83-.346 1.135-1.507H7.5v2.923c-.67-.204-1.335-.82-1.887-1.855zM8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855.305 1.16.715 1.622 1.135 1.507zm.355-1.507a6.69 6.69 0 0 1 .597.933c.25.513.475 1.058.64 1.539A7.025 7.025 0 0 0 13.745 12H8.855z"/>
+                </svg>
+            </span>
+            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="langDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                中文
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langDropdown">
+                <li><a class="dropdown-item" href="#" onclick="setLanguage('zh')">中文</a></li>
+                <li><a class="dropdown-item" href="#" onclick="setLanguage('en')">English</a></li>
+            </ul>
+        </div>
+        <h1 class="text-center mb-2">RustFS Demo (WebAPI + Static HTML)</h1>
+        <p class="text-center mb-4">
+            <a href="/scalar/v1" target="_blank" class="btn btn-sm btn-outline-secondary" data-i18n="apiDocs">📄 API 文档 (Scalar)</a>
+        </p>
+        
+        <div class="row">
+            <!-- Bucket List -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0" data-i18n="bucketList">存储桶列表</h5>
+                        <button class="btn btn-sm btn-primary" onclick="showCreateBucketModal()">+</button>
+                    </div>
+                    <ul class="list-group list-group-flush" id="bucketList">
+                        <!-- Buckets will be loaded here -->
+                        <li class="list-group-item text-center text-muted" data-i18n="loading">加载中...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- File List -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0" id="currentBucketTitle" data-i18n="selectBucket">请选择一个存储桶</h5>
+                        <div id="fileActions" style="display:none;">
+                            <button class="btn btn-sm btn-success" onclick="document.getElementById('fileInput').click()" data-i18n="uploadFile">上传文件</button>
+                            <input type="file" id="fileInput" style="display:none" onchange="uploadFile(this)">
+                            <button class="btn btn-sm btn-danger ms-2" onclick="deleteCurrentBucket()" data-i18n="deleteBucket">删除存储桶</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="filesContainer">
+                            <p class="text-muted text-center" data-i18n="selectBucketHint">选择左侧存储桶以查看文件</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Bucket Modal -->
+    <div class="modal fade" id="createBucketModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" data-i18n="createBucketTitle">创建存储桶</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="newBucketName" class="form-control" placeholder="输入存储桶名称" data-i18n-placeholder="enterBucketName">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="cancel">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createBucket()" data-i18n="create">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentBucket = null;
+        const bucketApiBase = '/api/buckets';
+        
+        // i18n configuration
+        let currentLang = 'zh';
+        const i18n = {
+            zh: {
+                apiDocs: '📄 API 文档 (Scalar)',
+                bucketList: '存储桶列表',
+                loading: '加载中...',
+                noBuckets: '暂无存储桶',
+                selectBucket: '请选择一个存储桶',
+                uploadFile: '上传文件',
+                deleteBucket: '删除存储桶',
+                selectBucketHint: '选择左侧存储桶以查看文件',
+                createBucketTitle: '创建存储桶',
+                enterBucketName: '输入存储桶名称',
+                cancel: '取消',
+                create: '创建',
+                fileName: '文件名',
+                actions: '操作',
+                download: '下载',
+                delete: '删除',
+                bucketEmpty: '此存储桶为空',
+                loadBucketsFail: '加载存储桶失败',
+                createFail: '创建失败',
+                deleteBucketConfirm: '确定要删除存储桶 {0} 及其所有文件吗？',
+                deleteFail: '删除失败',
+                uploadFail: '上传失败',
+                deleteFileConfirm: '确定要删除文件 {0} 吗？',
+                loadFilesFail: '加载文件失败',
+                bucketPrefix: '存储桶: '
+            },
+            en: {
+                apiDocs: '📄 API Docs (Scalar)',
+                bucketList: 'Bucket List',
+                loading: 'Loading...',
+                noBuckets: 'No buckets',
+                selectBucket: 'Select a bucket',
+                uploadFile: 'Upload File',
+                deleteBucket: 'Delete Bucket',
+                selectBucketHint: 'Select a bucket from the left to view files',
+                createBucketTitle: 'Create Bucket',
+                enterBucketName: 'Enter bucket name',
+                cancel: 'Cancel',
+                create: 'Create',
+                fileName: 'File Name',
+                actions: 'Actions',
+                download: 'Download',
+                delete: 'Delete',
+                bucketEmpty: 'Bucket is empty',
+                loadBucketsFail: 'Failed to load buckets',
+                createFail: 'Create failed',
+                deleteBucketConfirm: 'Are you sure you want to delete bucket {0} and all its files?',
+                deleteFail: 'Delete failed',
+                uploadFail: 'Upload failed',
+                deleteFileConfirm: 'Are you sure you want to delete file {0}?',
+                loadFilesFail: 'Failed to load files',
+                bucketPrefix: 'Bucket: '
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            updateLanguage();
+            // Reload content to update dynamic texts
+            loadBuckets();
+            if (currentBucket) loadFiles(currentBucket);
+        }
+
+        function updateLanguage() {
+            // Update button text
+            const btn = document.getElementById('langDropdown');
+            if (btn) {
+                btn.textContent = currentLang === 'zh' ? '中文' : 'English';
+            }
+            
+            // Update static elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[currentLang][key]) {
+                    el.textContent = i18n[currentLang][key];
+                }
+            });
+
+            // Update placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18n[currentLang][key]) {
+                    el.placeholder = i18n[currentLang][key];
+                }
+            });
+
+            // Update current bucket title if selected
+            if (currentBucket) {
+                document.getElementById('currentBucketTitle').textContent = `${i18n[currentLang].bucketPrefix}${currentBucket}`;
+            } else {
+                 document.getElementById('currentBucketTitle').textContent = i18n[currentLang].selectBucket;
+            }
+        }
+
+        // Initialize language
+        updateLanguage();
+
+        // Load buckets on start
+        loadBuckets();
+
+        async function loadBuckets() {
+            try {
+                const res = await fetch(`${bucketApiBase}`);
+                const buckets = await res.json();
+                const list = document.getElementById('bucketList');
+                list.innerHTML = '';
+                
+                if (buckets.length === 0) {
+                    list.innerHTML = `<li class="list-group-item text-center text-muted">${i18n[currentLang].noBuckets}</li>`;
+                    return;
+                }
+
+                buckets.forEach(b => {
+                    const li = document.createElement('li');
+                    li.className = `list-group-item bucket-item ${currentBucket === b ? 'active-bucket' : ''}`;
+                    li.textContent = b;
+                    li.onclick = () => selectBucket(b);
+                    list.appendChild(li);
+                });
+            } catch (err) {
+                console.error(err);
+                alert(i18n[currentLang].loadBucketsFail);
+            }
+        }
+
+        async function selectBucket(name) {
+            currentBucket = name;
+            document.getElementById('currentBucketTitle').textContent = `${i18n[currentLang].bucketPrefix}${name}`;
+            document.getElementById('fileActions').style.display = 'block';
+            
+            // Highlight selection
+            const items = document.querySelectorAll('.bucket-item');
+            items.forEach(i => {
+                if (i.textContent === name) i.classList.add('active-bucket');
+                else i.classList.remove('active-bucket');
+            });
+
+            loadFiles(name);
+        }
+
+        async function loadFiles(bucketName) {
+            const container = document.getElementById('filesContainer');
+            container.innerHTML = `<p class="text-center">${i18n[currentLang].loading}</p>`;
+
+            try {
+                const res = await fetch(`${bucketApiBase}/${bucketName}/files`);
+                if (!res.ok) throw new Error('Failed to load files');
+                const files = await res.json();
+                
+                if (files.length === 0) {
+                    container.innerHTML = `<p class="text-muted text-center">${i18n[currentLang].bucketEmpty}</p>`;
+                    return;
+                }
+
+                let html = `<table class="table table-hover"><thead><tr><th>${i18n[currentLang].fileName}</th><th class="text-end">${i18n[currentLang].actions}</th></tr></thead><tbody>`;
+                files.forEach(f => {
+                    html += `
+                        <tr>
+                            <td>${f}</td>
+                            <td class="text-end">
+                                <a href="${bucketApiBase}/${bucketName}/files/${f}" target="_blank" class="btn btn-sm btn-info text-white">${i18n[currentLang].download}</a>
+                                <button class="btn btn-sm btn-danger" onclick="deleteFile('${f}')">${i18n[currentLang].delete}</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<p class="text-danger text-center">${i18n[currentLang].loadFilesFail}</p>`;
+            }
+        }
+
+        function showCreateBucketModal() {
+            new bootstrap.Modal(document.getElementById('createBucketModal')).show();
+        }
+
+        async function createBucket() {
+            const name = document.getElementById('newBucketName').value;
+            if (!name) return;
+
+            try {
+                const res = await fetch(`${bucketApiBase}`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                });
+                if (res.ok) {
+                    document.getElementById('newBucketName').value = '';
+                    bootstrap.Modal.getInstance(document.getElementById('createBucketModal')).hide();
+                    loadBuckets();
+                } else {
+                    alert(i18n[currentLang].createFail);
+                }
+            } catch (err) {
+                console.error(err);
+                alert(i18n[currentLang].createFail);
+            }
+        }
+
+        async function deleteCurrentBucket() {
+            if (!currentBucket) return;
+            const confirmMsg = i18n[currentLang].deleteBucketConfirm.replace('{0}', currentBucket);
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch(`${bucketApiBase}/${currentBucket}`, { method: 'DELETE' });
+                if (res.ok) {
+                    currentBucket = null;
+                    document.getElementById('currentBucketTitle').textContent = i18n[currentLang].selectBucket;
+                    document.getElementById('fileActions').style.display = 'none';
+                    document.getElementById('filesContainer').innerHTML = `<p class="text-muted text-center">${i18n[currentLang].selectBucketHint}</p>`;
+                    loadBuckets();
+                } else {
+                    alert(i18n[currentLang].deleteFail);
+                }
+            } catch (err) {
+                console.error(err);
+                alert(i18n[currentLang].deleteFail);
+            }
+        }
+
+        async function uploadFile(input) {
+            if (!currentBucket || !input.files[0]) return;
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch(`${bucketApiBase}/${currentBucket}/files`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    loadFiles(currentBucket);
+                } else {
+                    alert(i18n[currentLang].uploadFail);
+                }
+            } catch (err) {
+                console.error(err);
+                alert(i18n[currentLang].uploadFail);
+            }
+            input.value = ''; // Reset input
+        }
+
+        async function deleteFile(key) {
+            const confirmMsg = i18n[currentLang].deleteFileConfirm.replace('{0}', key);
+            if (!confirm(confirmMsg)) return;
+            
+            try {
+                const res = await fetch(`${bucketApiBase}/${currentBucket}/files/${key}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadFiles(currentBucket);
+                } else {
+                    alert(i18n[currentLang].deleteFail);
+                }
+            } catch (err) {
+                console.error(err);
+                alert(i18n[currentLang].deleteFail);
+            }
+        }
+    </script>
+</body>
+</html>
