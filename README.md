@@ -1,6 +1,6 @@
 # RustFS.Demo
 
-[![CI](https://github.com/ZUOXIANGE/RustFS.Demo/actions/workflows/ci.yml/badge.svg)](https://github.com/ZUOXIANGE/RustFS.Demo/actions/workflows/ci.yml)
+[![CI](https://github.com/rustfs/rustfs-dotnet-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/rustfs/rustfs-dotnet-demo/actions/workflows/ci.yml)
 
 English | [中文](./README_zh.md)
 
