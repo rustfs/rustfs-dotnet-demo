@@ -57,6 +57,8 @@
                         <div id="fileActions" style="display:none;">
                             <button class="btn btn-sm btn-success" onclick="document.getElementById('fileInput').click()" data-i18n="uploadFile">上传文件</button>
                             <input type="file" id="fileInput" style="display:none" onchange="uploadFile(this)">
+                            <button class="btn btn-sm btn-info ms-2 text-white" onclick="document.getElementById('fileInputDirect').click()" data-i18n="uploadFileDirect">直传文件</button>
+                            <input type="file" id="fileInputDirect" style="display:none" onchange="uploadFileDirectly(this)">
                             <button class="btn btn-sm btn-danger ms-2" onclick="deleteCurrentBucket()" data-i18n="deleteBucket">删除存储桶</button>
                         </div>
                     </div>
@@ -104,6 +106,7 @@
                 noBuckets: '暂无存储桶',
                 selectBucket: '请选择一个存储桶',
                 uploadFile: '上传文件',
+                uploadFileDirect: '直传文件',
                 deleteBucket: '删除存储桶',
                 selectBucketHint: '选择左侧存储桶以查看文件',
                 createBucketTitle: '创建存储桶',
@@ -120,6 +123,7 @@
                 deleteBucketConfirm: '确定要删除存储桶 {0} 及其所有文件吗？',
                 deleteFail: '删除失败',
                 uploadFail: '上传失败',
+                uploadDirectFail: '直传失败',
                 deleteFileConfirm: '确定要删除文件 {0} 吗？',
                 loadFilesFail: '加载文件失败',
                 bucketPrefix: '存储桶: '
@@ -131,6 +135,7 @@
                 noBuckets: 'No buckets',
                 selectBucket: 'Select a bucket',
                 uploadFile: 'Upload File',
+                uploadFileDirect: 'Direct Upload',
                 deleteBucket: 'Delete Bucket',
                 selectBucketHint: 'Select a bucket from the left to view files',
                 createBucketTitle: 'Create Bucket',
@@ -147,6 +152,7 @@
                 deleteBucketConfirm: 'Are you sure you want to delete bucket {0} and all its files?',
                 deleteFail: 'Delete failed',
                 uploadFail: 'Upload failed',
+                uploadDirectFail: 'Direct Upload failed',
                 deleteFileConfirm: 'Are you sure you want to delete file {0}?',
                 loadFilesFail: 'Failed to load files',
                 bucketPrefix: 'Bucket: '
@@ -341,6 +347,37 @@
             } catch (err) {
                 console.error(err);
                 alert(i18n[currentLang].uploadFail);
+            }
+            input.value = ''; // Reset input
+        }
+
+        async function uploadFileDirectly(input) {
+            if (!currentBucket || !input.files[0]) return;
+            const file = input.files[0];
+            
+            try {
+                // 1. 获取预签名 URL
+                const presignUrlRes = await fetch(`${bucketApiBase}/${currentBucket}/files/presigned-upload-url?key=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`);
+                if (!presignUrlRes.ok) throw new Error('Failed to get presigned URL');
+                const { url } = await presignUrlRes.json();
+
+                // 2. 直传文件到 OSS
+                const uploadRes = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+
+                if (uploadRes.ok) {
+                    loadFiles(currentBucket);
+                } else {
+                    alert(i18n[currentLang].uploadDirectFail);
+                }
+            } catch (err) {
+                console.error(err);
+                alert(i18n[currentLang].uploadDirectFail);
             }
             input.value = ''; // Reset input
         }

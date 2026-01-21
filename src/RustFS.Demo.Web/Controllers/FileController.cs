@@ -36,6 +36,20 @@ public class FileController : ControllerBase
     }
 
     /// <summary>
+    /// 获取预签名上传 URL
+    /// </summary>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <param name="options">请求参数</param>
+    /// <returns>预签名 URL</returns>
+    [HttpGet("presigned-upload-url")]
+    public async Task<ActionResult<string>> GetPresignedUploadUrl([BucketName] string bucketName, [FromQuery] PresignedUrlOptions options)
+    {
+        var finalOptions = options with { BucketName = bucketName, ContentType = options.ContentType ?? "application/octet-stream" };
+        var url = await _s3Service.GeneratePresignedUploadUrlAsync(finalOptions);
+        return Ok(new { url });
+    }
+
+    /// <summary>
     /// 上传文件到指定存储桶
     /// </summary>
     /// <param name="bucketName">存储桶名称</param>

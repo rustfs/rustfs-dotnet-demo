@@ -1,3 +1,4 @@
+using Amazon.S3;
 using Amazon.S3.Model;
 using RustFS.Demo.Web.Models;
 using System.Net.Mime;
@@ -6,6 +7,37 @@ namespace RustFS.Demo.Web.Services;
 
 public partial class RustFSService
 {
+    /// <summary>
+    /// 生成预签名上传 URL
+    /// </summary>
+    /// <param name="options">生成选项</param>
+    /// <returns>预签名 URL</returns>
+    public async Task<string> GeneratePresignedUploadUrlAsync(PresignedUrlOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.BucketName))
+        {
+            throw new ArgumentException("BucketName cannot be empty", nameof(options));
+        }
+
+        // 检查存储桶是否存在，如果不存在则创建
+        if (!await BucketExistsAsync(options.BucketName))
+        {
+            await CreateBucketAsync(options.BucketName);
+        }
+
+        GetPreSignedUrlRequest request = new()
+        {
+            BucketName = options.BucketName,
+            Key = options.Key,
+            Verb = HttpVerb.PUT,
+            Expires = DateTime.UtcNow.AddMinutes(options.DurationMinutes),
+            ContentType = options.ContentType ?? MediaTypeNames.Application.Octet,
+            Protocol = _serviceUrl.StartsWith("https", StringComparison.OrdinalIgnoreCase) ? Protocol.HTTPS : Protocol.HTTP
+        };
+
+        return await _s3Client.GetPreSignedURLAsync(request);
+    }
+
     /// <summary>
     /// 上传文件
     /// </summary>

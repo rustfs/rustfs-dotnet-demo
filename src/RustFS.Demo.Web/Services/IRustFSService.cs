@@ -41,6 +41,13 @@ public interface IRustFSService
     #region 文件操作
 
     /// <summary>
+    /// 生成预签名上传 URL
+    /// </summary>
+    /// <param name="options">生成选项</param>
+    /// <returns>预签名 URL</returns>
+    Task<string> GeneratePresignedUploadUrlAsync(PresignedUrlOptions options);
+
+    /// <summary>
     /// 上传文件
     /// </summary>
     /// <param name="bucketName"></param>

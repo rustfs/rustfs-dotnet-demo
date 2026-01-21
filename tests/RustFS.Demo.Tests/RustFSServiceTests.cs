@@ -68,6 +68,48 @@ public class RustFSServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PresignedUploadUrl_ShouldWorkCorrectly()
+    {
+        // Arrange
+        var service = CreateService();
+        var bucketName = $"bucket-{Guid.NewGuid()}";
+        var fileName = "test-upload.txt";
+        var content = "Hello, Presigned URL!";
+        var contentType = "text/plain";
+
+        // Act
+        // 1. Generate Presigned URL (will create bucket if not exists)
+        var options = new PresignedUrlOptions(fileName, contentType, bucketName);
+        var url = await service.GeneratePresignedUploadUrlAsync(options);
+        Assert.NotNull(url);
+        Assert.StartsWith("http://", url);
+
+        // 2. Upload file using the URL
+        using var httpClient = new HttpClient();
+        var contentBytes = Encoding.UTF8.GetBytes(content);
+        using var byteContent = new ByteArrayContent(contentBytes);
+        byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+
+        var response = await httpClient.PutAsync(url, byteContent);
+        
+        // Assert
+        Assert.True(response.IsSuccessStatusCode, $"Upload failed with status code: {response.StatusCode}");
+
+        // 3. Verify file exists
+        var exists = await service.BucketExistsAsync(bucketName);
+        Assert.True(exists, "Bucket should exist");
+        
+        var files = await service.ListFilesAsync(bucketName);
+        Assert.Contains(fileName, files);
+
+        // 4. Verify content
+        await using var stream = await service.GetFileAsync(bucketName, fileName);
+        using var reader = new StreamReader(stream);
+        var uploadedContent = await reader.ReadToEndAsync();
+        Assert.Equal(content, uploadedContent);
+    }
+
+    [Fact]
     public async Task BucketOperations_ShouldWorkCorrectly()
     {
         // Arrange
@@ -166,4 +208,3 @@ public class RustFSServiceTests : IAsyncLifetime
         Assert.Empty(files);
     }
 }
-
