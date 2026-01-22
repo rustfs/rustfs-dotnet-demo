@@ -26,18 +26,15 @@ public class BucketNameAttribute : ValidationAttribute
         }
 
         // 检查是否以字母或数字开头和结尾
-        if (!char.IsLetterOrDigit(bucketName[0]) || !char.IsLetterOrDigit(bucketName[bucketName.Length - 1]))
+        if (!char.IsLetterOrDigit(bucketName[0]) || !char.IsLetterOrDigit(bucketName[^1]))
         {
             return new ValidationResult("存储桶名称必须以字母或数字开头和结尾。");
         }
 
         // 检查字符有效性
-        foreach (var c in bucketName)
+        if (bucketName.Any(c => !(char.IsLower(c) || char.IsDigit(c) || c == '.' || c == '-')))
         {
-            if (!(char.IsLower(c) || char.IsDigit(c) || c == '.' || c == '-'))
-            {
-                return new ValidationResult("存储桶名称只能包含小写字母、数字、点(.)和连字符(-)。");
-            }
+            return new ValidationResult("存储桶名称只能包含小写字母、数字、点(.)和连字符(-)。");
         }
 
         // 检查连续的点

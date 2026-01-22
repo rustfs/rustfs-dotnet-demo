@@ -43,7 +43,6 @@ public partial class RustFSService
     /// <returns>删除成功返回 true</returns>
     public async Task<bool> DeleteBucketAsync(string bucketName)
     {
-        //TODO 这里不能直接删除桶?
         // 首先删除存储桶中的所有对象
         var files = await ListFilesAsync(bucketName);
         if (files.Any())

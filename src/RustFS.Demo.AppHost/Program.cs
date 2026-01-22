@@ -29,7 +29,7 @@ var rustfs = builder.AddContainer("rustfs", "rustfs/rustfs", "latest")
     .WithBindMount("./deploy/data/pro", "/data")
     .WithBindMount("./deploy/logs", "/app/logs");
 
-var web = builder.AddProject("web", "../RustFS.Demo.Web/RustFS.Demo.Web.csproj")
+_ = builder.AddProject("web", "../RustFS.Demo.Web/RustFS.Demo.Web.csproj")
     .WithReference(rustfs.GetEndpoint("s3-api"))
     .WaitFor(rustfs);
 
