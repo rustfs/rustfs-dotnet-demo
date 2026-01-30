@@ -12,9 +12,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 // 添加 RustFS 容器
 var rustfs = builder.AddContainer("rustfs", "rustfs/rustfs", "latest")
     // S3 API 端口
-    .WithHttpEndpoint(targetPort: 9000, name: "s3-api")
+    .WithHttpEndpoint(port: 59000, targetPort: 9000, name: "s3-api")
     // 控制台端口
-    .WithHttpEndpoint(targetPort: 9001, name: "console")
+    .WithHttpEndpoint(port: 59001, targetPort: 9001, name: "console")
     // 环境变量配置
     .WithEnvironment("RUSTFS_VOLUMES", "/data/rustfs0")
     .WithEnvironment("RUSTFS_ADDRESS", "0.0.0.0:9000")
