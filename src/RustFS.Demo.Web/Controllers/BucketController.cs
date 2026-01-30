@@ -10,17 +10,10 @@ namespace RustFS.Demo.Web.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/buckets")]
-public class BucketController : ControllerBase
+public sealed class BucketController(
+    ILogger<BucketController> logger, 
+    IRustFSService s3Service) : ControllerBase
 {
-    private readonly IRustFSService _s3Service;
-    private readonly ILogger<BucketController> _logger;
-
-    public BucketController(IRustFSService s3Service, ILogger<BucketController> logger)
-    {
-        _s3Service = s3Service;
-        _logger = logger;
-    }
-
     /// <summary>
     /// 获取所有存储桶列表
     /// </summary>
@@ -28,7 +21,7 @@ public class BucketController : ControllerBase
     [HttpGet]
     public async Task<IEnumerable<string>> List()
     {
-        return await _s3Service.ListBucketsAsync();
+        return await s3Service.ListBucketsAsync();
     }
 
     /// <summary>
@@ -39,7 +32,8 @@ public class BucketController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBucketRequest request)
     {
-        await _s3Service.CreateBucketAsync(request.Name);
+        logger.LogWarning("Create a new bucket.");
+        await s3Service.CreateBucketAsync(request.Name);
         return Ok();
     }
 
@@ -51,7 +45,8 @@ public class BucketController : ControllerBase
     [HttpDelete("{bucketName}")]
     public async Task<IActionResult> Delete([BucketName] string bucketName)
     {
-        await _s3Service.DeleteBucketAsync(bucketName);
+        logger.LogWarning("Dangerous behavior, deleting bucket!!!");
+        await s3Service.DeleteBucketAsync(bucketName);
         return NoContent();
     }
 }

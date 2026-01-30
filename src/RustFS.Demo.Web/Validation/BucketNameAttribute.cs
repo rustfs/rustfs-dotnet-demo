@@ -1,11 +1,9 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace RustFS.Demo.Web.Validation;
 
 /// <summary>
 /// 存储桶名称验证特性
 /// </summary>
-public class BucketNameAttribute : ValidationAttribute
+public sealed class BucketNameAttribute : ValidationAttribute
 {
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {

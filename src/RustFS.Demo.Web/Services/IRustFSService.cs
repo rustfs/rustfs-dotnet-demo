@@ -1,4 +1,5 @@
 using RustFS.Demo.Web.Models;
+using RustFS.Demo.Web.Options;
 
 namespace RustFS.Demo.Web.Services;
 
@@ -12,28 +13,28 @@ public interface IRustFSService
     /// <summary>
     /// 创建存储桶
     /// </summary>
-    /// <param name="bucketName"></param>
-    /// <returns></returns>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <returns>创建成功返回 true</returns>
     Task<bool> CreateBucketAsync(string bucketName);
 
     /// <summary>
     /// 检查存储桶是否存在
     /// </summary>
-    /// <param name="bucketName"></param>
-    /// <returns></returns>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <returns>存在返回 true，否则返回 false</returns>
     Task<bool> BucketExistsAsync(string bucketName);
 
     /// <summary>
-    /// 删除存储桶
+    /// 删除存储桶（会先清空其中的文件）
     /// </summary>
-    /// <param name="bucketName"></param>
-    /// <returns></returns>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <returns>删除成功返回 true</returns>
     Task<bool> DeleteBucketAsync(string bucketName);
 
     /// <summary>
     /// 列出所有存储桶
     /// </summary>
-    /// <returns></returns>
+    /// <returns>存储桶名称列表</returns>
     Task<IEnumerable<string>> ListBucketsAsync();
 
     #endregion
@@ -50,34 +51,34 @@ public interface IRustFSService
     /// <summary>
     /// 上传文件
     /// </summary>
-    /// <param name="bucketName"></param>
-    /// <param name="key"></param>
-    /// <param name="fileStream"></param>
-    /// <param name="contentType"></param>
-    /// <returns></returns>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <param name="key">文件键值（文件名）</param>
+    /// <param name="fileStream">文件流</param>
+    /// <param name="contentType">内容类型</param>
+    /// <returns>上传结果</returns>
     Task<UploadResult> UploadFileAsync(string bucketName, string key, Stream fileStream, string contentType);
 
     /// <summary>
-    /// 获取文件
+    /// 获取文件流
     /// </summary>
-    /// <param name="bucketName"></param>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <param name="key">文件键值（文件名）</param>
+    /// <returns>文件流</returns>
     Task<Stream> GetFileAsync(string bucketName, string key);
 
     /// <summary>
     /// 删除文件
     /// </summary>
-    /// <param name="bucketName"></param>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <param name="key">文件键值（文件名）</param>
+    /// <returns>删除成功返回 true</returns>
     Task<bool> DeleteFileAsync(string bucketName, string key);
 
     /// <summary>
     /// 列出存储桶中的文件
     /// </summary>
-    /// <param name="bucketName"></param>
-    /// <returns></returns>
+    /// <param name="bucketName">存储桶名称</param>
+    /// <returns>文件名列表</returns>
     Task<IEnumerable<string>> ListFilesAsync(string bucketName);
 
     #endregion
