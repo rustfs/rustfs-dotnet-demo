@@ -1,13 +1,13 @@
 using Amazon.S3;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Images;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using RustFS.Demo.Web.Models;
+using RustFS.Demo.Web.Options;
 using RustFS.Demo.Web.Services;
 using System.Net;
 using System.Text;
-using DotNet.Testcontainers.Images;
 
 namespace RustFS.Demo.Tests;
 

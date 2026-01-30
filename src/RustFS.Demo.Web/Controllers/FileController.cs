@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RustFS.Demo.Web.Models;
+using RustFS.Demo.Web.Options;
 using RustFS.Demo.Web.Services;
 using RustFS.Demo.Web.Validation;
 
@@ -10,17 +11,10 @@ namespace RustFS.Demo.Web.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/buckets/{bucketName}/files")]
-public class FileController : ControllerBase
+public sealed class FileController(
+    ILogger<FileController> logger, 
+    IRustFSService s3Service) : ControllerBase
 {
-    private readonly IRustFSService _s3Service;
-    private readonly ILogger<FileController> _logger;
-
-    public FileController(IRustFSService s3Service, ILogger<FileController> logger)
-    {
-        _s3Service = s3Service;
-        _logger = logger;
-    }
-
     /// <summary>
     /// 获取存储桶中的文件列表
     /// </summary>
@@ -29,10 +23,10 @@ public class FileController : ControllerBase
     [HttpGet]
     public async Task<IEnumerable<string>> ListFiles([BucketName] string bucketName)
     {
-        if (!await _s3Service.BucketExistsAsync(bucketName))
+        if (!await s3Service.BucketExistsAsync(bucketName))
             throw new KeyNotFoundException("Bucket not found");
 
-        return await _s3Service.ListFilesAsync(bucketName);
+        return await s3Service.ListFilesAsync(bucketName);
     }
 
     /// <summary>
@@ -45,7 +39,7 @@ public class FileController : ControllerBase
     public async Task<ActionResult<string>> GetPresignedUploadUrl([BucketName] string bucketName, [FromQuery] PresignedUrlOptions options)
     {
         var finalOptions = options with { BucketName = bucketName, ContentType = options.ContentType ?? "application/octet-stream" };
-        var url = await _s3Service.GeneratePresignedUploadUrlAsync(finalOptions);
+        var url = await s3Service.GeneratePresignedUploadUrlAsync(finalOptions);
         return Ok(new { url });
     }
 
@@ -62,7 +56,7 @@ public class FileController : ControllerBase
             throw new ArgumentException("No file uploaded");
 
         await using var stream = file.OpenReadStream();
-        var result = await _s3Service.UploadFileAsync(bucketName, file.FileName, stream, file.ContentType);
+        var result = await s3Service.UploadFileAsync(bucketName, file.FileName, stream, file.ContentType);
 
         if (result.Success)
             return Ok(result);
@@ -79,7 +73,7 @@ public class FileController : ControllerBase
     [HttpDelete("{key}")]
     public async Task<IActionResult> DeleteFile([BucketName] string bucketName, string key)
     {
-        await _s3Service.DeleteFileAsync(bucketName, key);
+        await s3Service.DeleteFileAsync(bucketName, key);
         return NoContent();
     }
 
@@ -92,7 +86,7 @@ public class FileController : ControllerBase
     [HttpGet("{key}")]
     public async Task<FileStreamResult> DownloadFile([BucketName] string bucketName, string key)
     {
-        var stream = await _s3Service.GetFileAsync(bucketName, key);
+        var stream = await s3Service.GetFileAsync(bucketName, key);
         return File(stream, "application/octet-stream", key);
     }
 }

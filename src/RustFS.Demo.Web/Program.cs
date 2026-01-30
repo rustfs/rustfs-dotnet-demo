@@ -1,11 +1,7 @@
 using RustFS.Demo.Web.Infrastructure;
 using RustFS.Demo.Web.Services;
+using RustFS.Demo.Web.Options;
 using Scalar.AspNetCore;
-using Amazon.S3;
-using Amazon.Runtime;
-using Microsoft.Extensions.Options;
-using RustFS.Demo.Web.Models;
-using Amazon;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +18,10 @@ builder.Services.Configure<S3StorageOptions>(options =>
     options.SecretKey = config["RustFS:SecretKey"] ?? "admin123";
     options.Region = "us-east-1";
 });
+
+//builder.Services.AddOptions<S3StorageOptions>()
+//    .Bind(builder.Configuration.GetSection(S3StorageOptions.SectionName))
+//    .Validate(options => options.IsValid(), $"{S3StorageOptions.SectionName} configuration is invalid");
 
 // 注册 AmazonS3Client
 builder.Services.AddSingleton<IAmazonS3>(provider =>
@@ -42,10 +42,10 @@ builder.Services.AddSingleton<IAmazonS3>(provider =>
         return new AmazonS3Client(config);
     }
 
-    if (!string.IsNullOrEmpty(options.AccessKey))
+    if (!string.IsNullOrWhiteSpace(options.AccessKey))
     {
         return new AmazonS3Client(
-            new BasicAWSCredentials(
+            new Amazon.Runtime.BasicAWSCredentials(
                 options.AccessKey,
                 options.SecretKey),
             config);

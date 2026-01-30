@@ -1,5 +1,3 @@
-using Amazon.S3.Model;
-
 namespace RustFS.Demo.Web.Services;
 
 public partial class RustFSService
@@ -21,7 +19,7 @@ public partial class RustFSService
             UseClientRegion = false
         };
 
-        await _s3Client.PutBucketAsync(request);
+        await s3Client.PutBucketAsync(request);
         return true;
     }
 
@@ -32,7 +30,7 @@ public partial class RustFSService
     /// <returns>存在返回 true，否则返回 false</returns>
     public async Task<bool> BucketExistsAsync(string bucketName)
     {
-        var response = await _s3Client.ListBucketsAsync();
+        var response = await s3Client.ListBucketsAsync();
         return response.Buckets?.Any(b => b.BucketName == bucketName) ?? false;
     }
 
@@ -53,7 +51,7 @@ public partial class RustFSService
                 Objects = files.Select(k => new KeyVersion { Key = k }).ToList()
             };
 
-            await _s3Client.DeleteObjectsAsync(deleteObjectsRequest);
+            await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
         }
 
         // 删除存储桶
@@ -62,7 +60,7 @@ public partial class RustFSService
             BucketName = bucketName
         };
 
-        await _s3Client.DeleteBucketAsync(deleteBucketRequest);
+        await s3Client.DeleteBucketAsync(deleteBucketRequest);
         return true;
     }
 
@@ -72,8 +70,8 @@ public partial class RustFSService
     /// <returns>存储桶名称列表</returns>
     public async Task<IEnumerable<string>> ListBucketsAsync()
     {
-        var response = await _s3Client.ListBucketsAsync();
-        return response.Buckets?.Select(b => b.BucketName) ?? Enumerable.Empty<string>();
+        var response = await s3Client.ListBucketsAsync();
+        return response.Buckets?.Select(b => b.BucketName) ?? [];
     }
 
 }

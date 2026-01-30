@@ -6,21 +6,14 @@ namespace RustFS.Demo.Web.Infrastructure;
 /// <summary>
 /// 全局异常处理器
 /// </summary>
-public class GlobalExceptionHandler : IExceptionHandler
+public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
-    {
-        _logger = logger;
-    }
-
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "An error occurred: {Message}", exception.Message);
+        logger.LogError(exception, "An error occurred: {Message}", exception.Message);
 
         var (statusCode, title) = exception switch
         {

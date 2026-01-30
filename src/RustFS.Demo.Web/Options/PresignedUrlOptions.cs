@@ -1,6 +1,4 @@
-using System.ComponentModel.DataAnnotations;
-
-namespace RustFS.Demo.Web.Models;
+namespace RustFS.Demo.Web.Options;
 
 /// <summary>
 /// 生成预签名 URL 选项

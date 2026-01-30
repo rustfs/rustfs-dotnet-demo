@@ -1,7 +1,5 @@
-using Amazon.S3;
-using Amazon.S3.Model;
 using RustFS.Demo.Web.Models;
-using System.Net.Mime;
+using RustFS.Demo.Web.Options;
 
 namespace RustFS.Demo.Web.Services;
 
@@ -35,7 +33,7 @@ public partial class RustFSService
             Protocol = _serviceUrl.StartsWith("https", StringComparison.OrdinalIgnoreCase) ? Protocol.HTTPS : Protocol.HTTP
         };
 
-        return await _s3Client.GetPreSignedURLAsync(request);
+        return await s3Client.GetPreSignedURLAsync(request);
     }
 
     /// <summary>
@@ -62,7 +60,7 @@ public partial class RustFSService
             ContentType = contentType ?? MediaTypeNames.Application.Octet
         };
 
-        await _s3Client.PutObjectAsync(request);
+        await s3Client.PutObjectAsync(request);
 
         // 构建文件访问 URL (仅用于显示，可能需要预签名 URL 或公开访问配置)
         // 这里简单拼接
@@ -84,7 +82,7 @@ public partial class RustFSService
             Key = key
         };
 
-        var response = await _s3Client.GetObjectAsync(request);
+        var response = await s3Client.GetObjectAsync(request);
         return response.ResponseStream;
     }
 
@@ -102,7 +100,7 @@ public partial class RustFSService
             Key = key
         };
 
-        var response = await _s3Client.DeleteObjectAsync(request);
+        var response = await s3Client.DeleteObjectAsync(request);
         // S3 删除对象即使对象不存在也会返回成功（204 No Content）
         return response.HttpStatusCode == System.Net.HttpStatusCode.NoContent || response.HttpStatusCode == System.Net.HttpStatusCode.OK;
     }
@@ -125,7 +123,7 @@ public partial class RustFSService
             BucketName = bucketName
         };
 
-        var response = await _s3Client.ListObjectsV2Async(request);
+        var response = await s3Client.ListObjectsV2Async(request);
         return response.S3Objects?.Select(o => o.Key) ?? Enumerable.Empty<string>();
     }
 }
