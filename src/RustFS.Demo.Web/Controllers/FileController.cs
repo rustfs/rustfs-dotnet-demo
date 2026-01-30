@@ -24,7 +24,10 @@ public sealed class FileController(
     public async Task<IEnumerable<string>> ListFiles([BucketName] string bucketName)
     {
         if (!await s3Service.BucketExistsAsync(bucketName))
+        {
+            logger.LogError($"Bucket not found, name {bucketName}");
             throw new KeyNotFoundException("Bucket not found");
+        }
 
         return await s3Service.ListFilesAsync(bucketName);
     }
@@ -38,7 +41,7 @@ public sealed class FileController(
     [HttpGet("presigned-upload-url")]
     public async Task<ActionResult<string>> GetPresignedUploadUrl([BucketName] string bucketName, [FromQuery] PresignedUrlOptions options)
     {
-        var finalOptions = options with { BucketName = bucketName, ContentType = options.ContentType ?? "application/octet-stream" };
+        var finalOptions = options with { BucketName = bucketName, ContentType = options.ContentType ?? MediaTypeNames.Application.Octet };
         var url = await s3Service.GeneratePresignedUploadUrlAsync(finalOptions);
         return Ok(new { url });
     }
@@ -73,6 +76,7 @@ public sealed class FileController(
     [HttpDelete("{key}")]
     public async Task<IActionResult> DeleteFile([BucketName] string bucketName, string key)
     {
+        logger.LogWarning("Dangerous behavior, deleting file!!!");
         await s3Service.DeleteFileAsync(bucketName, key);
         return NoContent();
     }
@@ -87,6 +91,6 @@ public sealed class FileController(
     public async Task<FileStreamResult> DownloadFile([BucketName] string bucketName, string key)
     {
         var stream = await s3Service.GetFileAsync(bucketName, key);
-        return File(stream, "application/octet-stream", key);
+        return File(stream, MediaTypeNames.Application.Octet, key);
     }
 }

@@ -32,6 +32,7 @@ public sealed class BucketController(
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBucketRequest request)
     {
+        logger.LogWarning("Create a new bucket.");
         await s3Service.CreateBucketAsync(request.Name);
         return Ok();
     }
@@ -44,6 +45,7 @@ public sealed class BucketController(
     [HttpDelete("{bucketName}")]
     public async Task<IActionResult> Delete([BucketName] string bucketName)
     {
+        logger.LogWarning("Dangerous behavior, deleting bucket!!!");
         await s3Service.DeleteBucketAsync(bucketName);
         return NoContent();
     }
