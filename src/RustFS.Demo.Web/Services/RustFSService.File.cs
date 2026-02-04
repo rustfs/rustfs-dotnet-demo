@@ -14,6 +14,8 @@ public partial class RustFSService
     /// <returns>预签名 URL</returns>
     public async Task<string> GeneratePresignedUploadUrlAsync(PresignedUrlOptions options)
     {
+        _logger.LogGeneratingPresignedUrl(options.BucketName, options.Key);
+
         if (string.IsNullOrWhiteSpace(options.BucketName))
         {
             throw new ArgumentException("BucketName cannot be empty", nameof(options));
@@ -22,6 +24,7 @@ public partial class RustFSService
         // 检查存储桶是否存在，如果不存在则创建
         if (!await BucketExistsAsync(options.BucketName))
         {
+            _logger.LogBucketNotExistCreating(options.BucketName);
             await CreateBucketAsync(options.BucketName);
         }
 
@@ -35,7 +38,9 @@ public partial class RustFSService
             Protocol = _serviceUrl.StartsWith("https", StringComparison.OrdinalIgnoreCase) ? Protocol.HTTPS : Protocol.HTTP
         };
 
-        return await _s3Client.GetPreSignedURLAsync(request);
+        var url = await _s3Client.GetPreSignedURLAsync(request);
+        _logger.LogPresignedUrlGenerated(url);
+        return url;
     }
 
     /// <summary>
@@ -48,9 +53,12 @@ public partial class RustFSService
     /// <returns>上传结果</returns>
     public async Task<UploadResult> UploadFileAsync(string bucketName, string key, Stream fileStream, string contentType)
     {
+        _logger.LogStartingFileUpload(bucketName, key, fileStream.Length);
+
         // 检查存储桶是否存在，如果不存在则创建
         if (!await BucketExistsAsync(bucketName))
         {
+            _logger.LogBucketNotExistCreating(bucketName);
             await CreateBucketAsync(bucketName);
         }
 
@@ -63,6 +71,7 @@ public partial class RustFSService
         };
 
         await _s3Client.PutObjectAsync(request);
+        _logger.LogFileUploaded(bucketName, key);
 
         // 构建文件访问 URL (仅用于显示，可能需要预签名 URL 或公开访问配置)
         // 这里简单拼接
@@ -78,6 +87,8 @@ public partial class RustFSService
     /// <returns>文件流</returns>
     public async Task<Stream> GetFileAsync(string bucketName, string key)
     {
+        _logger.LogGettingFile(bucketName, key);
+
         GetObjectRequest request = new()
         {
             BucketName = bucketName,
@@ -85,6 +96,7 @@ public partial class RustFSService
         };
 
         var response = await _s3Client.GetObjectAsync(request);
+        _logger.LogFileRetrieved(bucketName, key, response.ContentLength);
         return response.ResponseStream;
     }
 
@@ -96,6 +108,8 @@ public partial class RustFSService
     /// <returns>删除成功返回 true</returns>
     public async Task<bool> DeleteFileAsync(string bucketName, string key)
     {
+        _logger.LogDeletingFile(bucketName, key);
+
         DeleteObjectRequest request = new()
         {
             BucketName = bucketName,
@@ -104,7 +118,16 @@ public partial class RustFSService
 
         var response = await _s3Client.DeleteObjectAsync(request);
         // S3 删除对象即使对象不存在也会返回成功（204 No Content）
-        return response.HttpStatusCode == System.Net.HttpStatusCode.NoContent || response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+        var success = response.HttpStatusCode == System.Net.HttpStatusCode.NoContent || response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+        if (success)
+        {
+            _logger.LogFileDeleted(bucketName, key);
+        }
+        else
+        {
+            _logger.LogFileDeletionFailed(bucketName, response.HttpStatusCode);
+        }
+        return success;
     }
 
     /// <summary>
@@ -114,9 +137,12 @@ public partial class RustFSService
     /// <returns>文件名列表</returns>
     public async Task<IEnumerable<string>> ListFilesAsync(string bucketName)
     {
+        _logger.LogListingFiles(bucketName);
+
         // 检查 Bucket 是否存在，避免 ListObjectsV2Async 抛出 NotFound 异常
         if (!await BucketExistsAsync(bucketName))
         {
+            _logger.LogListFilesBucketNotExist(bucketName);
             return Enumerable.Empty<string>();
         }
 
@@ -126,6 +152,8 @@ public partial class RustFSService
         };
 
         var response = await _s3Client.ListObjectsV2Async(request);
+        var count = response.S3Objects?.Count ?? 0;
+        _logger.LogBucketFileCount(bucketName, count);
         return response.S3Objects?.Select(o => o.Key) ?? Enumerable.Empty<string>();
     }
 }
