@@ -5,6 +5,15 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
+    groups:
+      microsoft:
+        patterns:
+          - "Microsoft.*"
+        exclude-patterns:
+          - "Microsoft.NET.Test.Sdk"
+      otel:
+        patterns:
+          - "OpenTelemetry.*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

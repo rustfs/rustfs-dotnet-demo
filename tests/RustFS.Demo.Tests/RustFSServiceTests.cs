@@ -1,13 +1,13 @@
+using System.Net;
+using System.Text;
 using Amazon.S3;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Images;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using RustFS.Demo.Web.Models;
 using RustFS.Demo.Web.Services;
-using System.Net;
-using System.Text;
-using DotNet.Testcontainers.Images;
 
 namespace RustFS.Demo.Tests;
 
@@ -30,17 +30,18 @@ public class RustFSServiceTests : IAsyncLifetime
             .Build();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _rustfsContainer.StartAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _rustfsContainer.StopAsync();
+        GC.SuppressFinalize(this);
     }
 
-    private IRustFSService CreateService()
+    private RustFSService CreateService()
     {
         var hostPort = _rustfsContainer.GetMappedPublicPort(S3Port);
         var serviceUrl = $"http://{_rustfsContainer.Hostname}:{hostPort}";
@@ -90,22 +91,22 @@ public class RustFSServiceTests : IAsyncLifetime
         using var byteContent = new ByteArrayContent(contentBytes);
         byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
 
-        var response = await httpClient.PutAsync(url, byteContent);
-        
+        var response = await httpClient.PutAsync(url, byteContent, TestContext.Current.CancellationToken);
+
         // Assert
         Assert.True(response.IsSuccessStatusCode, $"Upload failed with status code: {response.StatusCode}");
 
         // 3. Verify file exists
         var exists = await service.BucketExistsAsync(bucketName);
         Assert.True(exists, "Bucket should exist");
-        
+
         var files = await service.ListFilesAsync(bucketName);
         Assert.Contains(fileName, files);
 
         // 4. Verify content
         await using var stream = await service.GetFileAsync(bucketName, fileName);
         using var reader = new StreamReader(stream);
-        var uploadedContent = await reader.ReadToEndAsync();
+        var uploadedContent = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
         Assert.Equal(content, uploadedContent);
     }
 
@@ -161,7 +162,7 @@ public class RustFSServiceTests : IAsyncLifetime
         // 3. Get File
         await using var downloadStream = await service.GetFileAsync(bucketName, fileName);
         using var reader = new StreamReader(downloadStream);
-        var fileContent = await reader.ReadToEndAsync();
+        var fileContent = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
         Assert.Equal(content, fileContent);
 
         // 4. Delete File
@@ -176,7 +177,7 @@ public class RustFSServiceTests : IAsyncLifetime
         Assert.DoesNotContain(fileName, filesAfterDelete);
 
         // GetFileAsync should throw Exception
-        await Assert.ThrowsAsync<AmazonS3Exception>(async () => await service.GetFileAsync(bucketName, fileName));
+        await Assert.ThrowsAnyAsync<AmazonS3Exception>(async () => await service.GetFileAsync(bucketName, fileName));
     }
 
     [Fact]
@@ -191,7 +192,7 @@ public class RustFSServiceTests : IAsyncLifetime
         await service.CreateBucketAsync(bucketName);
 
         // Act & Assert
-        await Assert.ThrowsAsync<AmazonS3Exception>(async () => await service.GetFileAsync(bucketName, fileName));
+        await Assert.ThrowsAnyAsync<AmazonS3Exception>(async () => await service.GetFileAsync(bucketName, fileName));
     }
 
     [Fact]

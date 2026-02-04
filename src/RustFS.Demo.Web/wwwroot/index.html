@@ -207,6 +207,10 @@
         async function loadBuckets() {
             try {
                 const res = await fetch(`${bucketApiBase}`);
+                if (!res.ok) {
+                    const msg = await getErrorMessage(res, i18n[currentLang].loadBucketsFail);
+                    throw new Error(msg);
+                }
                 const buckets = await res.json();
                 const list = document.getElementById('bucketList');
                 list.innerHTML = '';
@@ -225,7 +229,7 @@
                 });
             } catch (err) {
                 console.error(err);
-                alert(i18n[currentLang].loadBucketsFail);
+                alert(err.message || i18n[currentLang].loadBucketsFail);
             }
         }
 
@@ -250,7 +254,10 @@
 
             try {
                 const res = await fetch(`${bucketApiBase}/${bucketName}/files`);
-                if (!res.ok) throw new Error('Failed to load files');
+                if (!res.ok) {
+                    const msg = await getErrorMessage(res, i18n[currentLang].loadFilesFail);
+                    throw new Error(msg);
+                }
                 const files = await res.json();
                 
                 if (files.length === 0) {
@@ -274,12 +281,32 @@
                 container.innerHTML = html;
             } catch (err) {
                 console.error(err);
-                container.innerHTML = `<p class="text-danger text-center">${i18n[currentLang].loadFilesFail}</p>`;
+                container.innerHTML = `<p class="text-danger text-center">${err.message || i18n[currentLang].loadFilesFail}</p>`;
             }
         }
 
         function showCreateBucketModal() {
             new bootstrap.Modal(document.getElementById('createBucketModal')).show();
+        }
+
+        // Helper to extract error message from response
+        async function getErrorMessage(res, defaultMsg) {
+            try {
+                const contentType = res.headers.get("content-type");
+                // Check if content type is JSON (including application/problem+json)
+                if (contentType && contentType.indexOf("json") !== -1) {
+                    const data = await res.json();
+                    if (data.errors) {
+                        const errors = Object.values(data.errors).flat().join('\n');
+                        if (errors) return `${defaultMsg}:\n${errors}`;
+                    }
+                    if (data.detail) return `${defaultMsg}: ${data.detail}`;
+                    if (data.title) return `${defaultMsg}: ${data.title}`;
+                }
+            } catch (e) {
+                console.error("Error parsing response:", e);
+            }
+            return defaultMsg;
         }
 
         async function createBucket() {
@@ -297,7 +324,8 @@
                     bootstrap.Modal.getInstance(document.getElementById('createBucketModal')).hide();
                     loadBuckets();
                 } else {
-                    alert(i18n[currentLang].createFail);
+                    const msg = await getErrorMessage(res, i18n[currentLang].createFail);
+                    alert(msg);
                 }
             } catch (err) {
                 console.error(err);
@@ -319,7 +347,8 @@
                     document.getElementById('filesContainer').innerHTML = `<p class="text-muted text-center">${i18n[currentLang].selectBucketHint}</p>`;
                     loadBuckets();
                 } else {
-                    alert(i18n[currentLang].deleteFail);
+                    const msg = await getErrorMessage(res, i18n[currentLang].deleteFail);
+                    alert(msg);
                 }
             } catch (err) {
                 console.error(err);
@@ -342,7 +371,8 @@
                 if (res.ok) {
                     loadFiles(currentBucket);
                 } else {
-                    alert(i18n[currentLang].uploadFail);
+                    const msg = await getErrorMessage(res, i18n[currentLang].uploadFail);
+                    alert(msg);
                 }
             } catch (err) {
                 console.error(err);
@@ -358,7 +388,10 @@
             try {
                 // 1. 获取预签名 URL
                 const presignUrlRes = await fetch(`${bucketApiBase}/${currentBucket}/files/presigned-upload-url?key=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`);
-                if (!presignUrlRes.ok) throw new Error('Failed to get presigned URL');
+                if (!presignUrlRes.ok) {
+                    const msg = await getErrorMessage(presignUrlRes, i18n[currentLang].uploadDirectFail);
+                    throw new Error(msg);
+                }
                 const { url } = await presignUrlRes.json();
 
                 // 2. 直传文件到 OSS
@@ -377,7 +410,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert(i18n[currentLang].uploadDirectFail);
+                alert(err.message || i18n[currentLang].uploadDirectFail);
             }
             input.value = ''; // Reset input
         }
@@ -391,7 +424,8 @@
                 if (res.ok) {
                     loadFiles(currentBucket);
                 } else {
-                    alert(i18n[currentLang].deleteFail);
+                    const msg = await getErrorMessage(res, i18n[currentLang].deleteFail);
+                    alert(msg);
                 }
             } catch (err) {
                 console.error(err);
