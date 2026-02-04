@@ -3,12 +3,43 @@ name: .NET CI
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
 jobs:
-  build:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          
+      - name: Check Formatting
+        run: dotnet format --verify-no-changes
+
+  build:
+    name: Build and Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
     steps:
     - uses: actions/checkout@v6
     
@@ -23,17 +54,5 @@ jobs:
     - name: Build
       run: dotnet build RustFS.Demo.slnx --no-restore
 
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: 10.0.x
-
     - name: Test
-      run: dotnet test tests/RustFS.Demo.Tests/RustFS.Demo.Tests.csproj --verbosity normal
-
+      run: dotnet test tests/RustFS.Demo.Tests/RustFS.Demo.Tests.csproj --no-build --verbosity normal
