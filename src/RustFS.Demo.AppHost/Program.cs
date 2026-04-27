@@ -34,4 +34,3 @@ _ = builder.AddProject("web", "../RustFS.Demo.Web/RustFS.Demo.Web.csproj")
     .WaitFor(rustfs);
 
 await builder.Build().RunAsync();
-

@@ -14,4 +14,3 @@ public class S3StorageOptions
 
     public string? SecretKey { get; set; }
 }
-

@@ -1,4 +1,5 @@
 using Amazon.S3.Model;
+using Amazon.S3.Util;
 
 namespace RustFS.Demo.Web.Services;
 
@@ -11,9 +12,14 @@ public partial class RustFSService
     /// <returns>创建成功返回 true</returns>
     public async Task<bool> CreateBucketAsync(string bucketName)
     {
+        _logger.LogStartingCreateBucket(bucketName);
+
         bool hasBucket = await BucketExistsAsync(bucketName);
         if (hasBucket)
+        {
+            _logger.LogBucketAlreadyExists(bucketName);
             return true;
+        }
 
         PutBucketRequest request = new()
         {
@@ -22,6 +28,7 @@ public partial class RustFSService
         };
 
         await _s3Client.PutBucketAsync(request);
+        _logger.LogBucketCreated(bucketName);
         return true;
     }
 
@@ -32,8 +39,9 @@ public partial class RustFSService
     /// <returns>存在返回 true，否则返回 false</returns>
     public async Task<bool> BucketExistsAsync(string bucketName)
     {
-        var response = await _s3Client.ListBucketsAsync();
-        return response.Buckets?.Any(b => b.BucketName == bucketName) ?? false;
+        var exists = await AmazonS3Util.DoesS3BucketExistV2Async(_s3Client, bucketName);
+        _logger.LogCheckingBucketExists(bucketName, exists);
+        return exists;
     }
 
     /// <summary>
@@ -43,26 +51,12 @@ public partial class RustFSService
     /// <returns>删除成功返回 true</returns>
     public async Task<bool> DeleteBucketAsync(string bucketName)
     {
-        // 首先删除存储桶中的所有对象
-        var files = await ListFilesAsync(bucketName);
-        if (files.Any())
-        {
-            DeleteObjectsRequest deleteObjectsRequest = new()
-            {
-                BucketName = bucketName,
-                Objects = files.Select(k => new KeyVersion { Key = k }).ToList()
-            };
+        _logger.LogStartingDeleteBucket(bucketName);
 
-            await _s3Client.DeleteObjectsAsync(deleteObjectsRequest);
-        }
+        // 使用 AmazonS3Util 自动处理对象删除和存储桶删除
+        await AmazonS3Util.DeleteS3BucketWithObjectsAsync(_s3Client, bucketName);
 
-        // 删除存储桶
-        DeleteBucketRequest deleteBucketRequest = new()
-        {
-            BucketName = bucketName
-        };
-
-        await _s3Client.DeleteBucketAsync(deleteBucketRequest);
+        _logger.LogBucketDeleted(bucketName);
         return true;
     }
 
@@ -73,6 +67,8 @@ public partial class RustFSService
     public async Task<IEnumerable<string>> ListBucketsAsync()
     {
         var response = await _s3Client.ListBucketsAsync();
+        var count = response.Buckets?.Count ?? 0;
+        _logger.LogBucketsRetrieved(count);
         return response.Buckets?.Select(b => b.BucketName) ?? Enumerable.Empty<string>();
     }
 

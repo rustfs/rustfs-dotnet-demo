@@ -7,4 +7,3 @@ namespace RustFS.Demo.Web.Models;
 /// <param name="Url">文件访问地址</param>
 /// <param name="ErrorMessage">错误信息（如果有）</param>
 public record UploadResult(bool Success, string? Url = null, string? ErrorMessage = null);
-

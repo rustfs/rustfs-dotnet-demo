@@ -1,11 +1,10 @@
+using Amazon;
+using Amazon.S3;
+using Microsoft.Extensions.Options;
 using RustFS.Demo.Web.Infrastructure;
+using RustFS.Demo.Web.Models;
 using RustFS.Demo.Web.Services;
 using Scalar.AspNetCore;
-using Amazon.S3;
-using Amazon.Runtime;
-using Microsoft.Extensions.Options;
-using RustFS.Demo.Web.Models;
-using Amazon;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,11 +43,7 @@ builder.Services.AddSingleton<IAmazonS3>(provider =>
 
     if (!string.IsNullOrEmpty(options.AccessKey))
     {
-        return new AmazonS3Client(
-            new BasicAWSCredentials(
-                options.AccessKey,
-                options.SecretKey),
-            config);
+        return new AmazonS3Client(options.AccessKey, options.SecretKey, config);
     }
 
     return new AmazonS3Client(config);
@@ -85,4 +80,3 @@ app.UseRouting();
 app.MapControllers();
 
 await app.RunAsync();
-
